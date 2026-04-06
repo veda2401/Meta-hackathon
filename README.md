@@ -1,3 +1,11 @@
+---
+title: Meta Hackathon
+emoji: ⚡
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+---
 # ⚡ Power Grid Optimization Environment
 
 > **Competition-grade** Agentic AI benchmark — IEEE 14-bus, real DC power flow,
