@@ -1,0 +1,25 @@
+# Core physics & numerics
+numpy>=1.26.0
+
+# Web framework (REST API + HF Spaces)
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+
+# Gradio UI
+gradio>=4.25.0
+
+# Visualisation (grid topology plots)
+plotly>=5.20.0
+
+# LLM agent (baseline inference script)
+openai>=1.14.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Optional: RL training backends (uncomment when needed)
+# gymnasium>=0.29.0
+# stable-baselines3>=2.3.0
+# torch>=2.2.0
