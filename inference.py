@@ -136,20 +136,25 @@ class LLMAgent:
             raise ImportError("openai package not installed. Run: pip install openai")
 
         # Hackathon prerequisite variables
-        api_key  = os.environ.get("HF_TOKEN") or os.environ.get("API_KEY") or os.environ.get("OPENAI_API_KEY")
-        base_url = os.environ.get("API_BASE_URL") or os.environ.get("OPENAI_BASE_URL")
+        API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+        MODEL_NAME   = os.getenv("MODEL_NAME", "gpt-4o-mini")
+        HF_TOKEN     = os.getenv("HF_TOKEN")
+        LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
-        if not api_key:
-            raise EnvironmentError(
-                "HF_TOKEN or API_KEY is not set. "
-                "Export your key or use --agent economic for a baseline run."
-            )
-        kwargs: dict = {"api_key": api_key}
-        if base_url:
-            kwargs["base_url"] = base_url
+        if not HF_TOKEN:
+            HF_TOKEN = os.environ.get("OPENAI_API_KEY") # Fallback for local testing
+            if not HF_TOKEN:
+                raise EnvironmentError(
+                    "HF_TOKEN is not set. "
+                    "Export your key (or set HF_TOKEN) for inference."
+                )
+                
+        kwargs: dict = {"api_key": HF_TOKEN}
+        if API_BASE_URL:
+            kwargs["base_url"] = API_BASE_URL
 
         self._client      = OpenAI(**kwargs)
-        self._model       = model or os.environ.get("MODEL_NAME", "gpt-4o-mini")
+        self._model       = MODEL_NAME
         self._temperature = temperature
         self._fallback    = EconomicDispatchAgent()
 
