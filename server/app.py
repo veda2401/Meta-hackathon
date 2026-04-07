@@ -501,9 +501,8 @@ with gr.Blocks(title="Power Grid Optimizer") as demo:
 app = gr.mount_gradio_app(fastapi_app, demo, path="/")
 
 
-if __name__ == "__main__":
+def main():
     import uvicorn
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=7860)
@@ -515,3 +514,6 @@ if __name__ == "__main__":
     print("  REST API   -> /api/  (try /api/info)")
     print("  API docs   -> /docs\n")
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+
+if __name__ == "__main__":
+    main()

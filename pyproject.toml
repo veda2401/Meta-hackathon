@@ -15,5 +15,10 @@ dependencies = [
     "pydantic>=2.6.0",
     "gradio>=4.25.0",
     "plotly>=5.20.0",
-    "openai>=1.14.0"
+    "openai>=1.14.0",
+    "openenv-core>=0.2.0"
 ]
+
+[project.scripts]
+server = "server.app:main"
+
