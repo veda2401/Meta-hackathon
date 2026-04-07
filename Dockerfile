@@ -23,4 +23,4 @@ COPY . .
 EXPOSE 7860
 
 # ─── Default: start the application ──────────────────────────────────────────
-CMD ["python", "server/app.py", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "-m", "server.app", "--host", "0.0.0.0", "--port", "7860"]
