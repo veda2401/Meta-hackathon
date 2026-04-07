@@ -139,17 +139,19 @@ class LLMAgent:
         API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
         MODEL_NAME   = os.getenv("MODEL_NAME", "gpt-4o-mini")
         HF_TOKEN     = os.getenv("HF_TOKEN")
+        API_KEY      = os.getenv("API_KEY")
         LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
-        if not HF_TOKEN:
-            HF_TOKEN = os.environ.get("OPENAI_API_KEY") # Fallback for local testing
-            if not HF_TOKEN:
-                raise EnvironmentError(
-                    "HF_TOKEN is not set. "
-                    "Export your key (or set HF_TOKEN) for inference."
-                )
+        # Prioritize the Phase 2 injected proxy API_KEY, fallback to HF_TOKEN
+        final_api_key = API_KEY or HF_TOKEN or os.getenv("OPENAI_API_KEY")
+
+        if not final_api_key:
+            raise EnvironmentError(
+                "API_KEY is not set. "
+                "Export your key for inference."
+            )
                 
-        kwargs: dict = {"api_key": HF_TOKEN}
+        kwargs: dict = {"api_key": final_api_key}
         if API_BASE_URL:
             kwargs["base_url"] = API_BASE_URL
 
