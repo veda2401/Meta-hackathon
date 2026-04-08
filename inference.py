@@ -136,26 +136,23 @@ class LLMAgent:
             raise ImportError("openai package not installed. Run: pip install openai")
 
         # Hackathon prerequisite variables
-        API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-        MODEL_NAME   = os.getenv("MODEL_NAME", "gpt-4o-mini")
-        HF_TOKEN     = os.getenv("HF_TOKEN")
-        API_KEY      = os.getenv("API_KEY")
+        MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
         LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
-        # Prioritize the Phase 2 injected proxy API_KEY, fallback to HF_TOKEN
-        final_api_key = API_KEY or HF_TOKEN or os.getenv("OPENAI_API_KEY")
-
-        if not final_api_key:
-            raise EnvironmentError(
-                "API_KEY is not set. "
-                "Export your key for inference."
+        # Phase 2 Strict Literal Match Initialization
+        if "API_BASE_URL" in os.environ and "API_KEY" in os.environ:
+            self._client = OpenAI(
+                base_url=os.environ["API_BASE_URL"],
+                api_key=os.environ["API_KEY"]
             )
-                
-        kwargs: dict = {"api_key": final_api_key}
-        if API_BASE_URL:
-            kwargs["base_url"] = API_BASE_URL
+        else:
+            # Fallback for local testing / Phase 1
+            API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+            HF_TOKEN = os.getenv("HF_TOKEN") or os.environ.get("OPENAI_API_KEY")
+            if not HF_TOKEN:
+                raise EnvironmentError("Export your key for inference.")
+            self._client = OpenAI(api_key=HF_TOKEN, base_url=API_BASE_URL)
 
-        self._client      = OpenAI(**kwargs)
         self._model       = MODEL_NAME
         self._temperature = temperature
         self._fallback    = EconomicDispatchAgent()
