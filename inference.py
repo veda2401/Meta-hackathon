@@ -154,25 +154,21 @@ class LLMAgent:
 
     def act(self, state: dict, env: PowerGridEnv) -> np.ndarray:
         user_msg = _state_to_prompt(state)
-        try:
-            response = self._client.chat.completions.create(
-                model=self._model,
-                temperature=self._temperature,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user",   "content": user_msg},
-                ],
-                max_tokens=64,
-            )
-            content = response.choices[0].message.content or ""
-            action  = _parse_llm_action(content)
-            if action is not None:
-                return action
-            print(f"  [LLM parse-error] raw='{content[:80]}' → falling back")
-        except Exception as exc:
-            print(f"  [LLM API error] {exc} → falling back")
-
-        return self._fallback.act(state, env)
+        response = self._client.chat.completions.create(
+            model=self._model,
+            temperature=self._temperature,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": user_msg},
+            ],
+            max_tokens=64,
+        )
+        content = response.choices[0].message.content or ""
+        action  = _parse_llm_action(content)
+        if action is not None:
+            return action
+        print(f"  [LLM parse-error] raw='{content[:80]}' → returning zero action")
+        return np.zeros(env.action_space.shape, dtype=env.action_space.dtype)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -303,16 +299,23 @@ def main() -> None:
     args = parser.parse_args()
 
     # ── Select agent ──────────────────────────────────────────────────────────
-    model_to_use = args.model or os.environ.get("MODEL_NAME")
-    if model_to_use:
+    # Force use of the LLM Agent by default to ensure Phase 2 validation hits the proxy!
+    model_to_use = args.model or os.environ.get("MODEL_NAME", "gpt-4o-mini")
+    
+    if args.agent == "economic" and not (args.model or os.environ.get("MODEL_NAME")):
+        # If running purely default, force LLMAgent to satisfy Hackathon AI proxy validation
         print(f"\n⚡ Using LLM agent: {model_to_use}", file=sys.stderr)
         agent = LLMAgent(model=model_to_use)
         agent_label = f"llm:{model_to_use}"
-    else:
+    elif args.agent != "economic":
         AgentCls = BASELINE_AGENTS[args.agent]
         agent    = AgentCls(seed=args.seed) if AgentCls == RandomAgent else AgentCls()
         agent_label = args.agent
         print(f"\n⚡ Using baseline agent: {agent_label}", file=sys.stderr)
+    else:
+        print(f"\n⚡ Using LLM agent: {model_to_use}", file=sys.stderr)
+        agent = LLMAgent(model=model_to_use)
+        agent_label = f"llm:{model_to_use}"
 
     print(f"   Episodes per task: {args.episodes}  |  Seed: {args.seed}\n", file=sys.stderr)
 
