@@ -154,21 +154,26 @@ class LLMAgent:
 
     def act(self, state: dict, env: PowerGridEnv) -> np.ndarray:
         user_msg = _state_to_prompt(state)
-        response = self._client.chat.completions.create(
-            model=self._model,
-            temperature=self._temperature,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": user_msg},
-            ],
-            max_tokens=64,
-        )
-        content = response.choices[0].message.content or ""
-        action  = _parse_llm_action(content)
-        if action is not None:
-            return action
-        print(f"  [LLM parse-error] raw='{content[:80]}' → returning zero action")
-        return np.zeros(env.action_space.shape, dtype=env.action_space.dtype)
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model,
+                temperature=self._temperature,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user",   "content": user_msg},
+                ],
+                max_tokens=64,
+            )
+            content = response.choices[0].message.content or ""
+            action  = _parse_llm_action(content)
+            if action is not None:
+                return action
+            print(f"  [LLM parse-error] raw='{content[:80]}' → falling back to math baseline")
+        except Exception as exc:
+            print(f"  [LLM API error] {exc} → falling back to math baseline")
+
+        # Graceful degradation logic mandatory for Phase 2 stability testing
+        return self._fallback.act(state, env)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
