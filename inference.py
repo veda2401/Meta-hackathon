@@ -140,18 +140,10 @@ class LLMAgent:
         LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
         # Phase 2 Strict Literal Match Initialization
-        if "API_BASE_URL" in os.environ and "API_KEY" in os.environ:
-            self._client = OpenAI(
-                base_url=os.environ["API_BASE_URL"],
-                api_key=os.environ["API_KEY"]
-            )
-        else:
-            # Fallback for local testing / Phase 1
-            API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-            HF_TOKEN = os.getenv("HF_TOKEN") or os.environ.get("OPENAI_API_KEY")
-            if not HF_TOKEN:
-                raise EnvironmentError("Export your key for inference.")
-            self._client = OpenAI(api_key=HF_TOKEN, base_url=API_BASE_URL)
+        self._client = OpenAI(
+            base_url=os.environ["API_BASE_URL"],
+            api_key=os.environ["API_KEY"]
+        )
 
         self._model       = MODEL_NAME
         self._temperature = temperature
