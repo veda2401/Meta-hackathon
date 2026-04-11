@@ -454,7 +454,8 @@ def run_task(
         "difficulty": difficulty,
         "episodes":   episodes,
         "seed":       seed,
-        "score": {
+        "score": round(statistics.mean(scores), 4),
+        "score_stats": {
             "mean": round(statistics.mean(scores), 4),
             "std":  round(statistics.stdev(scores) if episodes > 1 else 0.0, 4),
             "min":  round(min(scores), 4),
@@ -533,7 +534,7 @@ def main() -> None:
         "Difficulty", "Score", "Stdev", "Pass%"), file=sys.stderr)
     print("  " + "-"*52, file=sys.stderr)
     for diff, res in all_results.items():
-        s = res["score"]
+        s = res["score_stats"]
         print(
             "  {:<10} {:>8.4f}  {:>6.4f}  {:>6.1f}%  {}".format(
                 diff.upper(), s["mean"], s["std"],
