@@ -232,22 +232,22 @@ curl http://localhost:7860/health
 
 ---
 
-## 📈 Baseline Scores (EconomicDispatchAgent, seed=42, 5 episodes)
+## 📈 Baseline Scores (EconomicDispatchAgent, seed=42, 3 episodes)
 
 | Difficulty | Score 0-1 | ± Std | Pass Rate |
 |------------|-----------|-------|-----------|
-| **EASY** | **0.5741** | 0.003 | 100% |
-| **MEDIUM** | **0.5179** | 0.220 | 80% |
-| **HARD** | **0.5050** | 0.121 | 80% |
+| **EASY** | **0.5736** | 0.003 | 100% |
+| **MEDIUM** | **0.6273** | 0.122 | 100% |
+| **HARD** | **0.4676** | 0.153 | 67% |
 
 Reproduce:
 ```bash
-python inference.py --agent economic --episodes 5 --seed 42
+python inference.py --agent economic --episodes 3 --seed 42
 ```
 
 Run LLM agent (requires `API_KEY`):
 ```bash
-python inference.py --model gpt-4o-mini --episodes 5 --seed 42
+python inference.py --model gpt-4o-mini --episodes 3 --seed 42
 ```
 
 ---

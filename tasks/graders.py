@@ -93,11 +93,10 @@ def grade_episode(env: PowerGridEnv) -> dict:
 
     total_score = reward_score + overload_score + relay_score + outage_score + conv_score
     
-    # STRICT OpenEnv Validator Fix: The validator parses `total_score`, normalizes it
-    # by `score_range: [0, 100]` from openenv.yaml, and asserts 0 < score < 1. 
-    # Protective update: Aggressive floating point rounding on the server (e.g. round(normalized, 2))
-    # will round 0.9999 to 1.0! We must clamp total_score to [1.0, 99.0].
+    # STRICT OpenEnv Validator Fix: The validator parses all task scores and assert 0 < score < 1. 
+    # We must ensure that total_score is scaled to [0.01, 0.99].
     total_score = max(1.0, min(99.0, total_score))
+    clamped_score_01 = round(total_score / 100.0, 4)
 
     passed = (
         avg_reward       >= crit.min_avg_reward and
@@ -115,17 +114,17 @@ def grade_episode(env: PowerGridEnv) -> dict:
 
     return {
         "difficulty":   difficulty.value,
-        "total_score":  round(total_score, 2),
-        "score_01":     max(0.01, min(0.99, round(total_score / 100.0, 4))),
-        "score":        max(0.01, min(0.99, round(total_score / 100.0, 4))),
+        "total_score":  clamped_score_01,
+        "score_01":     clamped_score_01,
+        "score":        clamped_score_01,
         "grade":        _letter(total_score),
         "passed":       passed,
         "breakdown": {
-            "reward_score":   round(reward_score,   2),
-            "overload_score": round(overload_score, 2),
-            "relay_score":    round(relay_score,    2),
-            "outage_score":   round(outage_score,   2),
-            "conv_score":     round(conv_score,     2),
+            "reward_pts":   round(reward_score,   2),
+            "overload_pts": round(overload_score, 2),
+            "relay_pts":    round(relay_score,    2),
+            "outage_pts":   round(outage_score,   2),
+            "conv_pts":     round(conv_score,     2),
         },
         "metrics": {
             "total_steps":      total_steps,
