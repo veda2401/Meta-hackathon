@@ -454,6 +454,7 @@ def run_task(
         "difficulty": difficulty,
         "episodes":   episodes,
         "seed":       seed,
+        "score_01": round(statistics.mean(scores), 4),
         "score": round(statistics.mean(scores), 4),
         "score_stats": {
             "mean": round(statistics.mean(scores), 4),
