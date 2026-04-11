@@ -93,11 +93,6 @@ def grade_episode(env: PowerGridEnv) -> dict:
 
     total_score = reward_score + overload_score + relay_score + outage_score + conv_score
     
-    # STRICT OpenEnv Validator Fix: The validator parses all task scores and assert 0 < score < 1. 
-    # We must ensure that total_score is scaled to [0.01, 0.99].
-    total_score = max(1.0, min(99.0, total_score))
-    clamped_score_01 = round(total_score / 100.0, 4)
-
     passed = (
         avg_reward       >= crit.min_avg_reward and
         overload_events  <= crit.max_overload_events and
@@ -112,16 +107,25 @@ def grade_episode(env: PowerGridEnv) -> dict:
             sum(h["reward_components"][key] for h in history) / total_steps, 4
         )
 
-    # We must ensure that total_score is scaled to strictly [1.0, 99.0].
-    # This prevents edge case outputs of precisely 0.0 or 100.0, which 
-    # OpenEnv normalizes down to EXACTLY 0.0 or 1.0 (crashing Deep Validator checks).
-    total_score = max(1.0, min(99.0, total_score))
+    raw_score_01 = total_score / 100.0
+    
+    # STRICT clamp AFTER normalization
+    safe_score_01 = max(0.001, min(0.999, raw_score_01))
+    
+    # Avoid rounding to exact 0 or 1
+    safe_score_01 = round(safe_score_01, 4)
+    
+    # Final safety clamp again (VERY IMPORTANT)
+    if safe_score_01 <= 0.0:
+        safe_score_01 = 0.001
+    elif safe_score_01 >= 1.0:
+        safe_score_01 = 0.999
 
     return {
         "difficulty":   difficulty.value,
         "total_score":  round(total_score, 2),
-        "score_01":     round(total_score / 100.0, 4),
-        "score":        round(total_score / 100.0, 4),
+        "score_01":     safe_score_01,
+        "score":        safe_score_01,
         "grade":        _letter(total_score),
         "passed":       passed,
         "breakdown": {
