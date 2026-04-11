@@ -106,17 +106,22 @@ def grade_episode(env: PowerGridEnv) -> dict:
     )
 
     # Average reward components across episode
-    avg_components: dict[str, float] = {}
+    avg_comps: dict[str, float] = {}
     for key in ("balance", "overload", "reserve", "renewable", "cost", "stability"):
-        avg_components[key] = round(
+        avg_comps[key] = round(
             sum(h["reward_components"][key] for h in history) / total_steps, 4
         )
 
+    # We must ensure that total_score is scaled to strictly [1.0, 99.0].
+    # This prevents edge case outputs of precisely 0.0 or 100.0, which 
+    # OpenEnv normalizes down to EXACTLY 0.0 or 1.0 (crashing Deep Validator checks).
+    total_score = max(1.0, min(99.0, total_score))
+
     return {
         "difficulty":   difficulty.value,
-        "total_score":  clamped_score_01,
-        "score_01":     clamped_score_01,
-        "score":        clamped_score_01,
+        "total_score":  round(total_score, 2),
+        "score_01":     round(total_score / 100.0, 4),
+        "score":        round(total_score / 100.0, 4),
         "grade":        _letter(total_score),
         "passed":       passed,
         "breakdown": {
@@ -127,13 +132,13 @@ def grade_episode(env: PowerGridEnv) -> dict:
             "conv_pts":     round(conv_score,     2),
         },
         "metrics": {
-            "total_steps":      total_steps,
-            "total_reward":     round(total_reward,  4),
-            "avg_reward/step":  round(avg_reward,    4),
-            "overload_events":  overload_events,
-            "relay_trips":      relay_trips,
-            "gen_outages":      gen_outages,
-            "convergence_rate": round(converged_steps / total_steps, 4),
+            "total_steps":        total_steps,
+            "total_reward":       round(total_reward, 4),
+            "avg_reward/step":    round(avg_reward,   4),
+            "overload_events":    overload_events,
+            "relay_trips":        relay_trips,
+            "gen_outages":        gen_outages,
+            "convergence_rate":   round(converged_steps / max(1, total_steps), 4),
         },
-        "avg_reward_components": avg_components,
+        "avg_reward_components": avg_comps,
     }

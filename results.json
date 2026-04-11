@@ -39,7 +39,7 @@
       "episodes_detail": [
         {
           "difficulty": "easy",
-          "total_score": 0.5725,
+          "total_score": 57.25,
           "score_01": 0.5725,
           "score": 0.5725,
           "grade": "D",
@@ -183,7 +183,7 @@
         },
         {
           "difficulty": "easy",
-          "total_score": 0.5712,
+          "total_score": 57.12,
           "score_01": 0.5712,
           "score": 0.5712,
           "grade": "D",
@@ -327,7 +327,7 @@
         },
         {
           "difficulty": "easy",
-          "total_score": 0.577,
+          "total_score": 57.7,
           "score_01": 0.577,
           "score": 0.577,
           "grade": "D",
@@ -505,7 +505,7 @@
       "episodes_detail": [
         {
           "difficulty": "medium",
-          "total_score": 0.6469,
+          "total_score": 64.69,
           "score_01": 0.6469,
           "score": 0.6469,
           "grade": "C",
@@ -699,7 +699,7 @@
         },
         {
           "difficulty": "medium",
-          "total_score": 0.7383,
+          "total_score": 73.83,
           "score_01": 0.7383,
           "score": 0.7383,
           "grade": "C",
@@ -893,7 +893,7 @@
         },
         {
           "difficulty": "medium",
-          "total_score": 0.4968,
+          "total_score": 49.68,
           "score_01": 0.4968,
           "score": 0.4968,
           "grade": "D",
@@ -1121,7 +1121,7 @@
       "episodes_detail": [
         {
           "difficulty": "hard",
-          "total_score": 0.2943,
+          "total_score": 29.43,
           "score_01": 0.2943,
           "score": 0.2943,
           "grade": "F",
@@ -1365,7 +1365,7 @@
         },
         {
           "difficulty": "hard",
-          "total_score": 0.5221,
+          "total_score": 52.21,
           "score_01": 0.5221,
           "score": 0.5221,
           "grade": "D",
@@ -1609,7 +1609,7 @@
         },
         {
           "difficulty": "hard",
-          "total_score": 0.5863,
+          "total_score": 58.63,
           "score_01": 0.5863,
           "score": 0.5863,
           "grade": "D",

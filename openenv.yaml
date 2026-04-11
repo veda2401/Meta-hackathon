@@ -129,10 +129,10 @@ difficulty_levels:
 # ── Crisis Scenarios ───────────────────────────────────────────────────────
 scenarios:
   count:     8
-  probe:     0   # bias-detection scenarios (reward = 1.0 regardless)
-  trainable: 8   # performance-evaluation scenarios
+  probe:     2   # bias-detection scenarios (reward = 1.0 regardless)
+  trainable: 6   # performance-evaluation scenarios
 
-  trainable_scenarios:
+  probe_scenarios:
     - id:          inaction_bias_probe
       name:        Inaction Bias Probe
       difficulty:  hard
@@ -145,6 +145,8 @@ scenarios:
       description: >
         Standard grid under two different narrative framings. Paired probe
         to detect prompt framing sensitivity.
+
+  trainable_scenarios:
     - id:          cascade_blackout
       name:        Cascade Blackout
       difficulty:  hard
@@ -204,7 +206,7 @@ baselines:
 grading:
   module:      tasks.graders
   function:    grade_episode
-  score_range: [0, 1]
+  score_range: [0, 100]
   grades:      {A: "≥90", B: "≥75", C: "≥60", D: "≥40", F: "<40"}
   criteria:
     easy:   {min_avg_reward: -0.10, max_overload_events: 0,  max_relay_trips: 0,  max_gen_outages: 0}
