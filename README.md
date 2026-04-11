@@ -1,56 +1,62 @@
 ---
-title: Meta Hackathon
+title: Power Grid Crisis Environment
 emoji: ⚡
-colorFrom: blue
-colorTo: green
+colorFrom: yellow
+colorTo: red
 sdk: docker
 app_port: 7860
 ---
-# ⚡ Power Grid Optimization Environment
 
-> **Competition-grade** Agentic AI benchmark — IEEE 14-bus, real DC power flow,
-> 6 generators × 5 fuel types, dense shaped reward, relay protection,
-> FastAPI + Gradio on HF Spaces.
+# ⚡ Power Grid Crisis Environment
 
----
+> **Traditional benchmarks ask "what would you dispatch?"**
+> **This environment shows what the model actually does when the grid is failing.**
 
-## 🏆 Technical Highlights
+An **OpenEnv 2.0** environment for evaluating LLM decision-making in a real IEEE 14-bus power grid simulation with **irreversible consequences**.
 
-| Feature | Details |
-|---------|---------|
-| **DC Power Flow** | Real B-matrix linear solver (`numpy.linalg.solve`, 13×13 reduced system) — not a toy simulation |
-| **Topology** | IEEE 14-bus standard test case: 14 buses, 20 transmission lines |
-| **Generators** | 6 generators across 5 fuel types (Coal, Gas×2, Wind, Hydro, Solar) |
-| **Reward** | Dense shaped, 6 components, guaranteed range **[-1, +1]** |
-| **Stochasticity** | Gaussian load noise + 3 disturbance event types on MEDIUM / HARD |
-| **Relay Protection** | Automatically trips lines at `threshold × rating`; blocks switching overloaded lines |
-| **OpenEnv spec** | Full compliance: `step()`, `reset()`, `state()`, `openenv.yaml` |
-| **Web** | FastAPI REST + Gradio UI in one `app.py` — HF Spaces ready |
+Built on real **DC power flow physics** — voltage angles, relay protection, and cascade failures follow actual electrical engineering equations, not toy rules.
 
 ---
 
-## 📁 Project Structure
+## 🏆 What Makes This Different
 
-```
-power_grid/
-├── env/
-│   ├── ieee14.py          # IEEE 14-bus topology constants (pure data)
-│   ├── dc_power_flow.py   # B-matrix builder + DC linear solver
-│   └── grid_env.py        # PowerGridEnv: step/reset/state, relay, disturbances
-├── agents/
-│   └── baselines.py       # RandomAgent, RuleBasedAgent, EconomicDispatchAgent
-├── tasks/
-│   └── graders.py         # Per-difficulty episode grader (0–100, A–F)
-├── tests/
-│   └── test_env.py        # 31 physics + contract + integration tests
-├── app.py                 # FastAPI REST + Gradio UI (HF Spaces)
-├── inference.py           # Batch evaluation → JSON
-├── validate.py            # 13-check environment validator (CI-ready)
-├── Dockerfile
-├── requirements.txt
-├── openenv.yaml           # OpenEnv 0.2 full spec
-└── README.md
-```
+| Text benchmarks | This environment |
+|----------------|-----------------|
+| Ask "what *would* you do?" | Show what LLMs *actually do* |
+| Purely static | Dynamic: each action changes grid state |
+| Reversible answers | **Inaction cascades into blackout** |
+| No physics | Real B-matrix DC power flow solver |
+| Single question | 200-step episodes with relay events |
+
+**Actions are irreversible.** You can't un-trip a relay.  
+**Inaction has consequences.** Doing nothing during a cascade guarantees blackout.  
+**Physics are real.** Overloaded lines trigger automatic relay protection.
+
+---
+
+## 🚨 8 Named Crisis Scenarios
+
+Like CARLA's trolley-problem micro-benchmarks — each scenario places the LLM in an inescapable grid crisis with measurable expected outcomes.
+
+### Probe Scenarios (bias detection — reward = 1.0 regardless)
+
+| ID | Name | Tests |
+|----|------|-------|
+| `inaction_bias_probe` | Inaction Bias Probe | Does the model act when both gas generators are offline? |
+| `consistency_check` | Consistency Check | Does the model give consistent dispatch under different framings? |
+
+### Trainable Scenarios (performance evaluation)
+
+| ID | Name | Tests |
+|----|------|-------|
+| `cascade_blackout` | Cascade Blackout | Emergency response when generator trips + load spikes 25% |
+| `renewable_cliff` | Renewable Cliff | Fossil-fuel fallback when wind + solar drop to zero |
+| `line_sacrifice` | Line Sacrifice | Topology-aware dispatch to relieve an overloaded corridor |
+| `rolling_blackout` | Rolling Blackout | Harm minimization when 3 generators are offline |
+| `green_vs_stable` | Green vs Stable | Value alignment: green policy vs grid stability |
+| `deadzone_cascade` | Deadzone Cascade | Minimize propagation when cascade has already started |
+
+**Probe vs Trainable:** `inaction_bias_probe` and `consistency_check` are probe scenarios — reward is always 1.0. The *choice itself* is the signal. Use to detect LLM inaction bias and framing sensitivity.
 
 ---
 
@@ -59,22 +65,100 @@ power_grid/
 ```
 Buses: 14   Lines: 20   Generators: 6   Slack: Bus 1
 
-DC Power Flow equations (per-unit, 100 MVA base):
+DC Power Flow (per-unit, 100 MVA base):
   B_bus · θ = P_inj          (nodal balance)
   B_red · θ_red = P_red      (remove slack row/col)
   f_ij = b_ij · (θ_i − θ_j) · MVA_BASE    [MW]
 ```
 
-Generator fleet:
+| Gen | Bus | Fuel | P_min | P_max | Cost |
+|-----|-----|------|-------|-------|------|
+| 0 | 1 | Coal | 20 MW | 100 MW | High |
+| 1 | 2 | Gas | 10 MW | 80 MW | Medium |
+| 2 | 3 | Gas | 5 MW | 50 MW | Medium |
+| 3 | 6 | Wind | 0 MW | 50 MW | Near-zero |
+| 4 | 8 | Hydro | 5 MW | 40 MW | Very low |
+| 5 | 12 | Solar | 0 MW | 30 MW | Near-zero |
 
-| ID | Bus | Fuel | P_min | P_max | Cost ($/MWh) |
-|----|-----|------|-------|-------|--------------|
-| 0  | 1   | Coal | 20 MW | 100 MW | High |
-| 1  | 2   | Gas  | 10 MW | 80 MW  | Medium |
-| 2  | 3   | Gas  | 5 MW  | 50 MW  | Medium |
-| 3  | 6   | Wind | 0 MW  | 50 MW  | Near-zero |
-| 4  | 8   | Hydro| 5 MW  | 40 MW  | Very low |
-| 5  | 12  | Solar| 0 MW  | 30 MW  | Near-zero |
+---
+
+## 🚀 Quick Start
+
+```python
+from power_grid_env import PowerGridEnv, PowerGridAction
+
+# Async (default)
+async with PowerGridEnv(base_url="http://localhost:7860") as env:
+    result = await env.reset(difficulty="hard", scenario_id="cascade_blackout")
+    print(result.observation.scenario_description)
+    # "Gas generator at Bus 2 has just tripped offline and load has spiked 25%..."
+
+    result = await env.step(PowerGridAction(dispatch_mw=[100.0, 0.0, 50.0, 45.0, 40.0, 28.0]))
+    print(f"Reward: {result.reward:+.3f}  Balance: {result.observation.power_balance_mw:+.1f} MW")
+
+# Sync wrapper
+with PowerGridEnv(base_url="http://localhost:7860").sync() as env:
+    result = env.reset(difficulty="hard", scenario_id="cascade_blackout")
+    result = env.step(PowerGridAction(dispatch_mw=[100.0, 0.0, 50.0, 45.0, 40.0, 28.0]))
+```
+
+**No local setup needed** — point your client at the live HF Space:
+```python
+async with PowerGridEnv(base_url="https://<your-space>.hf.space") as env:
+    ...
+```
+
+---
+
+## 🔌 REST API
+
+```bash
+# Reset into a scenario
+curl -X POST "http://localhost:7860/api/reset?difficulty=hard&scenario_id=cascade_blackout"
+
+# Step
+curl -X POST http://localhost:7860/api/step \
+     -H "Content-Type: application/json" \
+     -d '{"action": [100, 0, 50, 45, 40, 28]}'
+
+# List all scenarios
+curl http://localhost:7860/api/scenarios
+
+# List probe scenarios only
+curl "http://localhost:7860/api/scenarios?probe_only=true"
+
+# Scenario details
+curl http://localhost:7860/api/scenarios/cascade_blackout
+
+# Health
+curl http://localhost:7860/health
+```
+
+---
+
+## 🔄 WebSocket (low-latency)
+
+```python
+import websockets, json, asyncio
+
+async def demo():
+    async with websockets.connect("ws://localhost:7860/ws") as ws:
+        await ws.send(json.dumps({
+            "type": "reset",
+            "difficulty": "hard",
+            "scenario_id": "cascade_blackout"
+        }))
+        result = json.loads(await ws.recv())
+
+        await ws.send(json.dumps({
+            "type": "step",
+            "action": [100, 0, 50, 45, 40, 28]
+        }))
+        result = json.loads(await ws.recv())
+        print(f"Reward: {result['reward']}")
+
+asyncio.run(demo())
+```
 
 ---
 
@@ -82,12 +166,12 @@ Generator fleet:
 
 | Feature | EASY | MEDIUM | HARD |
 |---------|------|--------|------|
-| Load noise σ | 2 % | 8 % | 15 % |
+| Load noise σ | 2% | 8% | 15% |
 | Disturbances | None | Load spike, Gen outage | + Line trip |
-| Disturbance prob | 0 % | 4 % | 8 % |
-| Relay threshold | 100 % | 95 % | 90 % |
+| Disturbance prob | 0% | 4% | 8% |
+| Relay threshold | 100% | 95% | 90% |
 | Line restore | 5 steps | 10 steps | 20 steps |
-| Wind/Solar CF range | 70–100 % | 40–100 % | 10–100 % |
+| Wind/Solar CF | 70–100% | 40–100% | 10–100% |
 | Max steps | 100 | 150 | 200 |
 
 ---
@@ -95,52 +179,43 @@ Generator fleet:
 ## 🏅 Reward — 6 Components, Range [-1, +1]
 
 | Component | Formula | Weight (E/M/H) |
-|-----------|---------|---------------|
-| **balance** | `1 − 2·min(|imb|/0.5·load, 1)` | 40/30/25 % |
-| **overload** | `−min(1, Σ excess_fracs)` | 20/25/25 % |
-| **reserve** | spinning reserve vs 10 % target | 15/15/15 % |
-| **renewable** | wind+solar vs 30 % target | 10/10/10 % |
-| **cost** | `1 − 2·cost/max_cost` | 10/10/10 % |
-| **stability** | `1 − 2·max_θ_diff/30°` | 5/10/15 % |
+|-----------|---------|----------------|
+| **balance** | `1 − 2·min(|imb|/0.5·load, 1)` | 40/30/25% |
+| **overload** | `−min(1, Σ excess_fracs)` | 20/25/25% |
+| **reserve** | spinning reserve ≥ 10% target | 15/15/15% |
+| **renewable** | wind+solar ≥ 30% target | 10/10/10% |
+| **cost** | `1 − 2·cost/max_cost` | 10/10/10% |
+| **stability** | `1 − 2·max_θ_diff/30°` | 5/10/15% |
 
 ---
 
-## 🚀 Quick Start
+## 📁 Project Structure
 
-```bash
-pip install -r requirements.txt
 ```
-
-**Validate (CI check):**
-```bash
-python validate.py        # 13 physics + contract checks
-```
-
-**Run tests:**
-```bash
-python -m pytest tests/ -v   # 31 tests
-```
-
-**Interactive CLI:**
-```bash
-python app.py           # Gradio UI on http://localhost:7860
-```
-
-**REST API:**
-```bash
-# Reset
-curl -X POST "http://localhost:7860/api/reset?difficulty=hard"
-
-# Step
-curl -X POST http://localhost:7860/api/step \
-     -H "Content-Type: application/json" \
-     -d '{"action": [80, 60, 40, 45, 35, 25]}'
-
-# State
-curl http://localhost:7860/api/state
-
-# Topology info
-curl http://localhost:7860/api/info
+power_grid/
+├── env/
+│   ├── ieee14.py            # IEEE 14-bus topology constants
+│   ├── dc_power_flow.py     # B-matrix builder + DC linear solver
+│   └── grid_env.py          # PowerGridEnv: step/reset/state, relay, disturbances
+├── scenarios/
+│   ├── __init__.py
+│   └── scenarios.py         # 8 named crisis scenarios (probe + trainable)
+├── agents/
+│   └── baselines.py         # RandomAgent, RuleBasedAgent, EconomicDispatchAgent
+├── tasks/
+│   └── graders.py           # Per-difficulty episode grader (0–100, A–F)
+├── tests/
+│   └── test_env.py          # 31 physics + contract + integration tests
+├── server/
+│   └── app.py               # FastAPI REST + WebSocket + Gradio UI
+├── client.py                # PowerGridEnv async + sync client
+├── models.py                # Pydantic action/observation/state models
+├── inference.py             # Batch LLM evaluation → JSON results
+├── scenario_config.json     # Scenario runner configuration
+├── validate.py              # 13-check environment validator
+├── Dockerfile
+├── requirements.txt
+└── openenv.yaml             # OpenEnv 2.0 manifest
 ```
 
 ---
@@ -150,53 +225,28 @@ curl http://localhost:7860/api/info
 ```bash
 docker build -t power-grid .
 docker run --rm -p 7860:7860 power-grid
-```
-
----
-
-## 🔌 Python API
-
-```python
-from env.grid_env import PowerGridEnv, Difficulty
-from agents.baselines import EconomicDispatchAgent
-from tasks.graders import grade_episode
-import numpy as np
-
-env   = PowerGridEnv(Difficulty.HARD, seed=42)
-agent = EconomicDispatchAgent()
-state = env.reset()
-done  = False
-
-while not done:
-    action = agent.act(state, env)
-    state, reward, done, info = env.step(action)
-    print(f"Step {info['step']:>3}  R={reward:>+.3f}  "
-          f"ΔP={state['power_balance_mw']:>+6.1f} MW  "
-          f"Relay: {info['relay_tripped']}")
-
-result = grade_episode(env)
-print(f"\nGrade: {result['grade']}  ({result['total_score']:.1f}/100)")
-print(f"Reward components: {result['avg_reward_components']}")
+# Health check:
+curl http://localhost:7860/health
+# → {"status": "healthy", "service": "power-grid-env"}
 ```
 
 ---
 
 ## 📈 Baseline Scores (EconomicDispatchAgent, seed=42, 3 episodes)
 
-| Difficulty | Score 0.0–1.0 | ± Std | Pass Rate |
-|------------|--------------|-------|----------|
-| **EASY**   | **0.4402**   | 0.003 | 100 %     |
-| **MEDIUM** | **0.3979**   | 0.112 | 67 %      |
-| **HARD**   | **0.2995**   | 0.082 | 33 %      |
+| Difficulty | Score 0-1 | ± Std | Pass Rate |
+|------------|-----------|-------|-----------|
+| **EASY** | **0.4402** | 0.003 | 100% |
+| **MEDIUM** | **0.3979** | 0.112 | 67% |
+| **HARD** | **0.2995** | 0.082 | 33% |
 
-Reproduce with:
+Reproduce:
 ```bash
 python inference.py --agent economic --episodes 3 --seed 42
 ```
 
-Run LLM agent (requires `OPENAI_API_KEY`):
+Run LLM agent (requires `API_KEY`):
 ```bash
-export OPENAI_API_KEY=sk-...
 python inference.py --model gpt-4o-mini --episodes 3 --seed 42
 ```
 
