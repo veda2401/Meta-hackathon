@@ -113,6 +113,7 @@ def root():
 
 # ── Reset ────────────────────────────────────────────────────────────────────
 
+@fastapi_app.post("/reset")
 @fastapi_app.post("/api/reset")
 def api_reset(
     difficulty: str = "easy",
@@ -163,6 +164,7 @@ def api_reset(
 
 # ── Step ─────────────────────────────────────────────────────────────────────
 
+@fastapi_app.post("/step")
 @fastapi_app.post("/api/step")
 def api_step(req: StepRequest):
     """Advance one step with the provided generator dispatch action."""
@@ -188,6 +190,7 @@ def api_step(req: StepRequest):
 
 # ── State ────────────────────────────────────────────────────────────────────
 
+@fastapi_app.get("/state")
 @fastapi_app.get("/api/state")
 def api_state():
     """Return current environment state without advancing."""
@@ -198,6 +201,7 @@ def api_state():
 
 # ── Info ─────────────────────────────────────────────────────────────────────
 
+@fastapi_app.get("/info")
 @fastapi_app.get("/api/info")
 def api_info():
     """Return static environment topology and generator metadata."""
