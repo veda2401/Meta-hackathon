@@ -92,6 +92,11 @@ def grade_episode(env: PowerGridEnv) -> dict:
     conv_score = 10.0 * converged_steps / total_steps
 
     total_score = reward_score + overload_score + relay_score + outage_score + conv_score
+    
+    # STRICT OpenEnv Validator Fix: The validator parses `total_score`, normalizes it
+    # by `score_range: [0, 100]` from openenv.yaml, and asserts 0 < score < 1. 
+    # Therefore, total_score must NEVER be exactly 0.0 or 100.0.
+    total_score = max(0.01, min(99.99, total_score))
 
     passed = (
         avg_reward       >= crit.min_avg_reward and
