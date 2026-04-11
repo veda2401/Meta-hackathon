@@ -446,7 +446,7 @@ def run_task(
             f.write("\n".join(transcript_lines))
         print("Reasoning transcript saved to transcript.txt", file=sys.stderr)
 
-    scores    = [r["score_01"] for r in results]
+    scores    = [r["score"] for r in results]
     avg_r     = [r["metrics"]["avg_reward/step"] for r in results]
     pass_rate = sum(1 for r in results if r["passed"]) / episodes
 
@@ -454,7 +454,7 @@ def run_task(
         "difficulty": difficulty,
         "episodes":   episodes,
         "seed":       seed,
-        "score_01": {
+        "score": {
             "mean": round(statistics.mean(scores), 4),
             "std":  round(statistics.stdev(scores) if episodes > 1 else 0.0, 4),
             "min":  round(min(scores), 4),
@@ -533,7 +533,7 @@ def main() -> None:
         "Difficulty", "Score", "Stdev", "Pass%"), file=sys.stderr)
     print("  " + "-"*52, file=sys.stderr)
     for diff, res in all_results.items():
-        s = res["score_01"]
+        s = res["score"]
         print(
             "  {:<10} {:>8.4f}  {:>6.4f}  {:>6.1f}%  {}".format(
                 diff.upper(), s["mean"], s["std"],
