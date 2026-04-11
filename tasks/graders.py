@@ -109,8 +109,8 @@ def grade_episode(env: PowerGridEnv) -> dict:
 
     return {
         "difficulty":   difficulty.value,
-        "total_score":  round(total_score, 2),           # 0–100
-        "score_01":     round(total_score / 100.0, 4),   # 0.0–1.0  ← OpenEnv spec
+        "total_score":  round(total_score, 2),
+        "score":        max(0.0001, min(0.9999, round(total_score / 100.0, 4))),
         "grade":        _letter(total_score),
         "passed":       passed,
         "breakdown": {
