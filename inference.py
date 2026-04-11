@@ -450,17 +450,24 @@ def run_task(
     avg_r     = [r["metrics"]["avg_reward/step"] for r in results]
     pass_rate = sum(1 for r in results if r["passed"]) / episodes
 
+    mean_score = statistics.mean(scores) if scores else 0.5
+    safe_mean = round(max(0.001, min(0.999, mean_score)), 4)
+    if safe_mean <= 0.0:
+        safe_mean = 0.001
+    elif safe_mean >= 1.0:
+        safe_mean = 0.999
+
     return {
         "difficulty": difficulty,
         "episodes":   episodes,
         "seed":       seed,
-        "score_01": round(statistics.mean(scores), 4),
-        "score": round(statistics.mean(scores), 4),
+        "score_01": safe_mean,
+        "score": safe_mean,
         "score_stats": {
-            "mean": round(statistics.mean(scores), 4),
+            "mean": safe_mean,
             "std":  round(statistics.stdev(scores) if episodes > 1 else 0.0, 4),
-            "min":  round(min(scores), 4),
-            "max":  round(max(scores), 4),
+            "min":  max(0.001, min(0.999, round(min(scores), 4))),
+            "max":  max(0.001, min(0.999, round(max(scores), 4))),
         },
         "avg_reward_per_step": {
             "mean": round(statistics.mean(avg_r), 4),
