@@ -95,8 +95,9 @@ def grade_episode(env: PowerGridEnv) -> dict:
     
     # STRICT OpenEnv Validator Fix: The validator parses `total_score`, normalizes it
     # by `score_range: [0, 100]` from openenv.yaml, and asserts 0 < score < 1. 
-    # Therefore, total_score must NEVER be exactly 0.0 or 100.0.
-    total_score = max(0.01, min(99.99, total_score))
+    # Protective update: Aggressive floating point rounding on the server (e.g. round(normalized, 2))
+    # will round 0.9999 to 1.0! We must clamp total_score to [1.0, 99.0].
+    total_score = max(1.0, min(99.0, total_score))
 
     passed = (
         avg_reward       >= crit.min_avg_reward and
@@ -115,8 +116,8 @@ def grade_episode(env: PowerGridEnv) -> dict:
     return {
         "difficulty":   difficulty.value,
         "total_score":  round(total_score, 2),
-        "score_01":     max(0.0001, min(0.9999, round(total_score / 100.0, 4))),
-        "score":        max(0.0001, min(0.9999, round(total_score / 100.0, 4))),
+        "score_01":     max(0.01, min(0.99, round(total_score / 100.0, 4))),
+        "score":        max(0.01, min(0.99, round(total_score / 100.0, 4))),
         "grade":        _letter(total_score),
         "passed":       passed,
         "breakdown": {
