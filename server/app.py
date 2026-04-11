@@ -104,12 +104,6 @@ def health():
     return {"status": "healthy", "service": "power-grid-env"}
 
 
-# ── Root redirect ────────────────────────────────────────────────────────────
-
-@fastapi_app.get("/")
-def root():
-    return RedirectResponse(url="/web")
-
 
 # ── Reset ────────────────────────────────────────────────────────────────────
 
@@ -1268,7 +1262,7 @@ The LLM's reasoning reveals whether it:
 # Mount Gradio at /web and launch
 # ════════════════════════════════════════════════════════════════════════════
 
-app = gr.mount_gradio_app(fastapi_app, demo, path="/web", css=CSS)
+app = gr.mount_gradio_app(fastapi_app, demo, path="/", css=CSS)
 
 
 def main():
