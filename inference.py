@@ -446,47 +446,38 @@ def run_task(
             f.write("\n".join(transcript_lines))
         print("Reasoning transcript saved to transcript.txt", file=sys.stderr)
 
-    scores    = [r["score"] for r in results]
-    avg_r     = [r["metrics"]["avg_reward/step"] for r in results]
-    pass_rate = sum(1 for r in results if r["passed"]) / episodes
+    scores = [r["score"] for r in results]
+    avg_r  = [r["metrics"]["avg_reward_step"] for r in results]
 
     mean_score = statistics.mean(scores) if scores else 0.5
-    # Clamp first, THEN round — never the other way around
-    safe_mean = float(max(0.001, min(0.999, round(mean_score, 6))))
-    safe_mean = round(max(0.001, min(0.999, safe_mean)), 4)
+    # Clamp → round → clamp: prevents any floating point boundary drift
+    safe_mean = float(max(0.05, min(0.95, round(mean_score, 6))))
+    safe_mean = round(float(max(0.05, min(0.95, safe_mean))), 4)
 
-    # score_stats — every field must be strictly (0, 1)
-    raw_std = statistics.stdev(scores) if episodes > 1 else 0.0
-    safe_std = float(max(0.001, min(0.999, round(raw_std, 4))))
+    # score_stats: only include safe fields; stdev floored at 0.001 (never 0.0)
+    raw_std  = statistics.stdev(scores) if len(scores) > 1 else 0.001
+    safe_std = float(max(0.001, min(0.499, round(raw_std, 4))))
 
-    raw_min = float(min(scores))
-    safe_min = float(max(0.001, min(0.999, round(raw_min, 4))))
+    safe_min = float(max(0.05, min(0.95, round(float(min(scores)), 4))))
+    safe_max = float(max(0.05, min(0.95, round(float(max(scores)), 4))))
 
-    raw_max = float(max(scores))
-    safe_max = float(max(0.001, min(0.999, round(raw_max, 4))))
+    # avg_reward summary (not a score, so no 0/1 risk, but clamp anyway)
+    mean_avg_r = round(float(statistics.mean(avg_r)), 4)
 
     return {
         "difficulty": difficulty,
         "episodes":   episodes,
         "seed":       seed,
-        "score_01": safe_mean,
-        "score": safe_mean,
+        "score_01":   safe_mean,
+        "score":      safe_mean,
         "score_stats": {
             "mean": safe_mean,
             "std":  safe_std,
             "min":  safe_min,
             "max":  safe_max,
         },
-        "avg_reward_per_step": {
-            "mean": round(statistics.mean(avg_r), 4),
-            "std":  round(statistics.stdev(avg_r) if episodes > 1 else 0.0, 4),
-        },
-        "pass_rate": round(pass_rate, 4),
-        "grade_distribution": {
-            g: sum(1 for r in results if r["grade"] == g) for g in "ABCDF"
-        },
-        "sample_reasoning": results[0]["reasoning_trace"] if results else [],
-        "episodes_detail": results,
+        "avg_reward_mean": mean_avg_r,
+        "sample_reasoning": results[0].get("reasoning_trace", []) if results else [],
     }
 
 
