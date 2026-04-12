@@ -396,7 +396,7 @@ def run_task(
                 try:
                     state, reward, done, _ = env.step(action)
                 except Exception as e:
-                    reward    = -0.5   # never exactly 0.0 or 1.0
+                    reward    = -0.5   # never exactly 0.0 — avoids validator rejection
                     done      = True
                     error_msg = str(e)
  
@@ -419,8 +419,19 @@ def run_task(
             result  = grade_episode(env)
             success = result["passed"]          # "yes" or "no" string
         except Exception as e:
+            # Guidelines: [END] always emitted after env.close()
+            try:
+                env.close()
+            except Exception:
+                pass
             log_end(success=False, steps=step_idx - 1, rewards=step_rewards)
             raise
+ 
+        # Guidelines: [END] emitted after env.close()
+        try:
+            env.close()
+        except Exception:
+            pass
  
         passed_bool = (success == "yes")        # bool for log/narrative
         log_end(success=passed_bool, steps=step_idx - 1, rewards=step_rewards)
@@ -480,7 +491,7 @@ def run_task(
     grade_dist = {g: str(grades.get(g, 0)) for g in ["A", "B", "C", "D", "F"]}
  
     from tasks.graders import _sanitize_output as _san
-    # Final sanitization of the entire task result — catches any surviving 0.0/1.0
+    # Return ONLY _clamp01'd floats and strings — final sanitize catches any edge-case 0.0/1.0
     return _san({
         "difficulty": difficulty,
         "score_01":   safe_mean,
