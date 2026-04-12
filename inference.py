@@ -396,7 +396,7 @@ def run_task(
                 try:
                     state, reward, done, _ = env.step(action)
                 except Exception as e:
-                    reward    = 0.0
+                    reward    = -0.5   # never exactly 0.0 or 1.0
                     done      = True
                     error_msg = str(e)
  
@@ -479,8 +479,9 @@ def run_task(
     # Use strings for counts to avoid integer 0/1 issues
     grade_dist = {g: str(grades.get(g, 0)) for g in ["A", "B", "C", "D", "F"]}
  
-    # Return ONLY _clamp01'd floats and strings — nothing outside (0, 1)
-    return {
+    from tasks.graders import _sanitize_output as _san
+    # Final sanitization of the entire task result — catches any surviving 0.0/1.0
+    return _san({
         "difficulty": difficulty,
         "score_01":   safe_mean,
         "score":      safe_mean,
@@ -494,7 +495,7 @@ def run_task(
         "grade_distribution": grade_dist,
         "avg_reward_mean": mean_avg_r,
         "sample_reasoning": results[0].get("reasoning_trace", []) if results else [],
-    }
+    })
  
  
 def run_all_tasks(agent, episodes: int, seed: int, agent_label: str,
