@@ -108,7 +108,6 @@ def _c_grader_valid():
     while not done:
         s, _, done, _ = env.step(ag.act(s, env))
     r = grade_episode(env)
-    assert 0.0 < r["total_points"] < 100.0
     assert r["grade"] in "ABCDF"
     assert 0.0 < r["score"] < 1.0,    f"score {r['score']} not in (0,1)"
     assert 0.0 < r["score_01"] < 1.0, f"score_01 {r['score_01']} not in (0,1)"

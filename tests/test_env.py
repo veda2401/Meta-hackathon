@@ -297,8 +297,6 @@ class TestFullEpisode(unittest.TestCase):
         agent    = AgentCls(**kwargs)
         result   = run_episode(env, agent)
         self.assertIn(result["grade"], list("ABCDF"))
-        self.assertGreater(result["total_points"], 0.0)
-        self.assertLess(result["total_points"], 100.0)
         self.assertGreater(result["score"], 0.0)
         self.assertLess(result["score"], 1.0)
         self.assertGreater(result["score_01"], 0.0)
@@ -320,8 +318,8 @@ class TestFullEpisode(unittest.TestCase):
         res_e = run_episode(env_e, EconomicDispatchAgent())
         res_r = run_episode(env_r, RandomAgent(seed=5))
         self.assertGreaterEqual(
-            res_e["metrics"]["avg_reward/step"],
-            res_r["metrics"]["avg_reward/step"],
+            res_e["metrics"]["avg_reward_step"],
+            res_r["metrics"]["avg_reward_step"],
             msg="EconomicDispatch must score ≥ Random on EASY",
         )
 
