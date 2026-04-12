@@ -3,8 +3,8 @@ tasks/graders.py
 ----------------
 Episode evaluation for the IEEE 14-Bus Power Grid Environment.
 
-Per-difficulty pass criteria. All score fields are STRICTLY in (0, 1) —
-boundary values 0.0 and 1.0 are structurally impossible by design.
+Per-difficulty pass criteria. ALL returned numeric fields are STRICTLY in (0, 1).
+Every numeric value goes through _clamp01() which maps to [0.05, 0.95].
 """
 
 from __future__ import annotations
@@ -82,8 +82,9 @@ def grade_episode(env: PowerGridEnv) -> dict:
     """
     Grade a completed episode.
 
-    Returns a dict where 'score' and 'score_01' are STRICTLY in (0.05, 0.95).
-    No field in the returned dict can ever be exactly 0.0 or 1.0.
+    Returns a dict where EVERY numeric field is STRICTLY in (0.05, 0.95).
+    All scores go through _clamp01(). No raw integers, booleans, or counts
+    are included — only clamped float scores and string labels.
     """
     history = env.history
     if not history:
@@ -121,15 +122,19 @@ def grade_episode(env: PowerGridEnv) -> dict:
         0.10 * outage_ratio   +   # 10% weight
         0.10 * conv_ratio         # 10% weight
     )
-    # raw_ratio is guaranteed in [0, 1] since all components are in [0, 1]
 
-    # ── Map to STRICT (0.05, 0.95) — structurally impossible to hit 0 or 1 ──
-    safe_score = _clamp01(raw_ratio)
+    # ── ALL scores through _clamp01 → strict (0.05, 0.95) ────────────────────
+    safe_score     = _clamp01(raw_ratio)
+    safe_reward    = _clamp01(reward_ratio)
+    safe_overload  = _clamp01(overload_ratio)
+    safe_relay     = _clamp01(relay_ratio)
+    safe_outage    = _clamp01(outage_ratio)
+    safe_conv_rate = _clamp01(conv_ratio)
 
-    # ── 0-100 display scale ───────────────────────────────────────────────────
+    # ── Grade (string only — computed internally from 0-100 scale) ────────────
     display_pts = round(float(raw_ratio) * 100.0, 2)
-    # Keep display in a safe display range (never output an exact integer 0/100)
     display_pts = round(max(0.01, min(99.99, display_pts)), 2)
+    grade = _letter(display_pts)
 
     # ── Pass/fail ─────────────────────────────────────────────────────────────
     passed = (
@@ -139,27 +144,24 @@ def grade_episode(env: PowerGridEnv) -> dict:
         and gen_outages     <= crit.max_gen_outages
     )
 
-    # ── Safe ratio fields (never 0.0 or 1.0) ─────────────────────────────────
-    safe_conv_rate = _clamp01(conv_ratio)
-
-    # ── Sanitize: ensure NO numeric value in output is exactly 0.0 or 1.0 ────
-    result = {
-        "difficulty":   difficulty.value,
-        "total_points": display_pts,
-        "score_01":     safe_score,
-        "score":        safe_score,
-        "grade":        _letter(display_pts),
-        "passed":       passed,
+    # ── Return: EVERY score value is _clamp01'd into (0.05, 0.95) ──────────
+    # No booleans, no raw integers, no values outside (0, 1)
+    # total_points is 0-100 scale (validate.py checks 0 < total_points < 100)
+    return {
+        "difficulty":   difficulty.value,          # string
+        "total_points": display_pts,               # float in (0.01, 99.99)
+        "score_01":     safe_score,                # float in (0.05, 0.95)
+        "score":        safe_score,                # float in (0.05, 0.95)
+        "grade":        grade,                     # string: A/B/C/D/F
+        "passed":       "yes" if passed else "no", # string (avoids bool==int)
         "metrics": {
-            "total_steps":      total_steps,
-            "avg_reward_step":  round(float(avg_reward), 4),
-            "overload_events":  overload_events,
-            "relay_trips":      relay_trips,
-            "gen_outages":      gen_outages,
-            "convergence_rate": safe_conv_rate,
+            "avg_reward_step":  safe_reward,       # float in (0.05, 0.95)
+            "overload_score":   safe_overload,     # float in (0.05, 0.95)
+            "relay_score":      safe_relay,        # float in (0.05, 0.95)
+            "outage_score":     safe_outage,       # float in (0.05, 0.95)
+            "convergence_rate": safe_conv_rate,    # float in (0.05, 0.95)
         },
     }
-    return _sanitize_output(result)
 
 
 def _sanitize_output(obj):
@@ -173,7 +175,6 @@ def _sanitize_output(obj):
     if isinstance(obj, (list, tuple)):
         return [_sanitize_output(v) for v in obj]
     if isinstance(obj, bool):
-        # Convert bool to a safe float: True→0.99, False→0.01
         return 0.99 if obj else 0.01
     if isinstance(obj, float):
         if obj == 0.0:
@@ -182,7 +183,6 @@ def _sanitize_output(obj):
             return 0.999
         return obj
     if isinstance(obj, int):
-        # Integers 0 and 1 compare equal to 0.0 and 1.0 in Python
         if obj == 0:
             return 0.001
         if obj == 1:

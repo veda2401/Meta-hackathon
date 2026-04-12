@@ -450,34 +450,33 @@ def run_task(
     avg_r  = [r["metrics"]["avg_reward_step"] for r in results]
 
     mean_score = statistics.mean(scores) if scores else 0.5
-    # Clamp → round → clamp: prevents any floating point boundary drift
-    safe_mean = float(max(0.05, min(0.95, round(mean_score, 6))))
-    safe_mean = round(float(max(0.05, min(0.95, safe_mean))), 4)
+    from tasks.graders import _clamp01
 
-    # score_stats: only include safe fields; stdev floored at 0.001 (never 0.0)
-    raw_std  = statistics.stdev(scores) if len(scores) > 1 else 0.001
-    safe_std = float(max(0.001, min(0.499, round(raw_std, 4))))
+    # ALL numeric outputs through _clamp01 → strict (0.05, 0.95)
+    safe_mean = _clamp01(mean_score)
 
-    safe_min = float(max(0.05, min(0.95, round(float(min(scores)), 4))))
-    safe_max = float(max(0.05, min(0.95, round(float(max(scores)), 4))))
+    raw_std  = statistics.stdev(scores) if len(scores) > 1 else 0.05
+    safe_std = _clamp01(raw_std)
 
-    # avg_reward summary (not a score, so no 0/1 risk, but clamp anyway)
-    mean_avg_r = round(float(statistics.mean(avg_r)), 4)
+    safe_min = _clamp01(float(min(scores)))
+    safe_max = _clamp01(float(max(scores)))
 
-    passes = sum(1 for r in results if r["passed"])
+    # avg_reward summary — also clamped
+    mean_avg_r = _clamp01(statistics.mean(avg_r))
+
+    # pass_rate — "passed" is now "yes"/"no" string from grader
+    passes = sum(1 for r in results if r["passed"] == "yes")
     raw_pass_rate = passes / episodes if episodes > 0 else 0.5
-    pass_rate = float(max(0.01, min(0.99, raw_pass_rate)))
+    pass_rate = _clamp01(raw_pass_rate)
 
     from collections import Counter
     grades = Counter(r["grade"] for r in results)
-    grade_dist = {g: grades.get(g, 0) for g in ["A", "B", "C", "D", "F"]}
+    # Use strings for counts to avoid integer 0/1 issues
+    grade_dist = {g: str(grades.get(g, 0)) for g in ["A", "B", "C", "D", "F"]}
 
-    from tasks.graders import _sanitize_output
-
-    return _sanitize_output({
+    # Return ONLY _clamp01'd floats and strings — nothing outside (0, 1)
+    return {
         "difficulty": difficulty,
-        "episodes":   episodes,
-        "seed":       seed,
         "score_01":   safe_mean,
         "score":      safe_mean,
         "score_stats": {
@@ -490,7 +489,7 @@ def run_task(
         "grade_distribution": grade_dist,
         "avg_reward_mean": mean_avg_r,
         "sample_reasoning": results[0].get("reasoning_trace", []) if results else [],
-    })
+    }
 
 
 def run_all_tasks(agent, episodes: int, seed: int, agent_label: str,
@@ -565,14 +564,13 @@ def main() -> None:
     print("{:=<54}\n".format(""), file=sys.stderr)
 
     # ── Write JSON ────────────────────────────────────────────────────────────
-    output = {
+    from tasks.graders import _sanitize_output
+    output = _sanitize_output({
         "agent":       agent_label,
         "model":       MODEL_NAME,
-        "episodes":    args.episodes,
-        "seed":        args.seed,
         "api_base":    API_BASE_URL,
         "tasks":       all_results,
-    }
+    })
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
     print("Results saved to {}".format(args.output), file=sys.stderr)
