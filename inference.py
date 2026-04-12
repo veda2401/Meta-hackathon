@@ -472,7 +472,9 @@ def run_task(
     grades = Counter(r["grade"] for r in results)
     grade_dist = {g: grades.get(g, 0) for g in ["A", "B", "C", "D", "F"]}
 
-    return {
+    from tasks.graders import _sanitize_output
+
+    return _sanitize_output({
         "difficulty": difficulty,
         "episodes":   episodes,
         "seed":       seed,
@@ -488,7 +490,7 @@ def run_task(
         "grade_distribution": grade_dist,
         "avg_reward_mean": mean_avg_r,
         "sample_reasoning": results[0].get("reasoning_trace", []) if results else [],
-    }
+    })
 
 
 def run_all_tasks(agent, episodes: int, seed: int, agent_label: str,
