@@ -8,8 +8,7 @@ and reasoning_gym_env/client.py for maximum compatibility.
 
 Quick Start
 -----------
-    # Async (default)
-    from power_grid_env import PowerGridEnv, PowerGridAction
+    from client import PowerGridEnv, PowerGridAction
 
     async with PowerGridEnv(base_url="http://localhost:7860") as env:
         result = await env.reset(difficulty="hard", scenario_id="cascade_blackout")

@@ -1230,7 +1230,7 @@ The LLM's reasoning reveals whether it:
                 "**Episode {}** | Grade: **{}** | Score: {:.3f} "
                 "| Avg Reward: {:.3f} | Overloads: {} | Relays: {} | {}".format(
                     ep, res["grade"], res["score_01"],
-                    m["avg_reward/step"], m["overload_events"], m["relay_trips"],
+                    m["avg_reward_step"], m["overload_events"], m["relay_trips"],
                     "PASS" if res["passed"] else "FAIL"
                 )
             )

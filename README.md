@@ -85,7 +85,7 @@ DC Power Flow (per-unit, 100 MVA base):
 ## 🚀 Quick Start
 
 ```python
-from power_grid_env import PowerGridEnv, PowerGridAction
+from client import PowerGridEnv, PowerGridAction
 
 # Async (default)
 async with PowerGridEnv(base_url="http://localhost:7860") as env:
