@@ -245,9 +245,9 @@ Reproduce:
 python inference.py --agent economic --episodes 3 --seed 42
 ```
 
-Run LLM agent (requires `API_KEY`):
+Run LLM agent (requires `HF_TOKEN` environment variable):
 ```bash
-python inference.py --model gpt-4o-mini --episodes 3 --seed 42
+python inference.py --episodes 3 --seed 42
 ```
 
 ---
