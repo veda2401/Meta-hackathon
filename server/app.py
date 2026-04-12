@@ -1214,7 +1214,7 @@ The LLM's reasoning reveals whether it:
         rc       = info.get("reward_components", {})
         fig_r    = _make_reward_bar(rc, _env.difficulty.value if _env else "easy")
         fig_hist = _make_reward_history_plot(all_rw)
-        n_passed = sum(1 for r in results if r["passed"])
+        n_passed = sum(1 for r in results if r.get("passed") == "yes")
 
         # Build dramatic result card
         outcome_emoji = "GRID STABLE" if n_passed == int(n_eps) else "PARTIAL FAILURE" if n_passed > 0 else "GRID FAILURE"
@@ -1228,10 +1228,10 @@ The LLM's reasoning reveals whether it:
             grade_color = {"A": "green", "B": "blue", "C": "orange", "D": "red", "F": "red"}.get(res["grade"], "grey")
             lines.append(
                 "**Episode {}** | Grade: **{}** | Score: {:.3f} "
-                "| Avg Reward: {:.3f} | Overloads: {} | Relays: {} | {}".format(
+                "| Avg Reward: {:.3f} | Overloads (Score): {:.2f} | Relays (Score): {:.2f} | {}".format(
                     ep, res["grade"], res["score_01"],
-                    m["avg_reward_step"], m["overload_events"], m["relay_trips"],
-                    "PASS" if res["passed"] else "FAIL"
+                    m.get("avg_reward_step", 0.0), m.get("overload_score", 0.0), m.get("relay_score", 0.0),
+                    "PASS" if res["passed"] == "yes" else "FAIL"
                 )
             )
         ep_r = _env.episode_reward if _env else 0.0
