@@ -91,15 +91,15 @@ def _sanitize_output(obj):
     if isinstance(obj, bool):
         return 0.99 if obj else 0.01
     if isinstance(obj, float):
-        if obj == 0.0:
+        if obj <= 0.0:
             return 0.001
-        if obj == 1.0:
+        if obj >= 1.0:
             return 0.999
         return obj
     if isinstance(obj, int):
-        if obj == 0:
+        if obj <= 0:
             return 0.001
-        if obj == 1:
+        if obj >= 1:
             return 0.999
         return obj
     return obj
@@ -177,6 +177,7 @@ def grade_episode(env: PowerGridEnv) -> dict:
     # ── Build result ──────────────────────────────────────────────────────────
     result = {
         "difficulty":   difficulty.value,          # string
+        "total_points": display_pts,               # float in (0.01, 99.99)
         "score_01":     safe_score,                # float in (0.05, 0.95)
         "score":        safe_score,                # float in (0.05, 0.95)
         "grade":        grade,                     # string: A/B/C/D/F

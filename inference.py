@@ -447,7 +447,7 @@ def run_task(
  
         from tasks.graders import _sanitize_output, _clamp01
         # Sanitize step_rewards — raw env rewards can be exactly 0.0, -1.0, 1.0 etc.
-        safe_step_rewards = [_clamp01((r + 1.0) / 2.0) for r in step_rewards]
+        safe_step_rewards = [max(0.001, min(0.999, _clamp01((r + 1.0) / 2.0))) for r in step_rewards]
  
         result["episode"]         = str(ep + 1)       # string avoids int 0/1 issue
         result["seed"]            = str(seed + ep)    # string avoids int 0/1 issue
