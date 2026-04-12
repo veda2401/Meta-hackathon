@@ -177,7 +177,6 @@ def grade_episode(env: PowerGridEnv) -> dict:
     # ── Build result ──────────────────────────────────────────────────────────
     result = {
         "difficulty":   difficulty.value,          # string
-        "total_points": display_pts,               # float in (0.01, 99.99)
         "score_01":     safe_score,                # float in (0.05, 0.95)
         "score":        safe_score,                # float in (0.05, 0.95)
         "grade":        grade,                     # string: A/B/C/D/F

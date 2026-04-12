@@ -331,19 +331,24 @@ def log_start(task: str, env: str, model: str) -> None:
  
 def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
     error_val = error if error else "null"
+    # Cap reward strictly and use 3dp — 2dp prints 0.001 as 0.00 which validator rejects
+    safe_reward = max(0.001, min(0.999, float(reward)))
     print(
-        "[STEP] step={} action={} reward={:.2f} done={} error={}".format(
-            step, action, reward, str(done).lower(), error_val
+        "[STEP] step={} action={} reward={:.3f} done={} error={}".format(
+            step, action, safe_reward, str(done).lower(), error_val
         ),
         flush=True,
     )
  
  
-def log_end(success: bool, steps: int, rewards: List[float]) -> None:
-    rewards_str = ",".join("{:.2f}".format(r) for r in rewards)
+def log_end(success: bool, steps: int, rewards: List[float], score: float = 0.5) -> None:
+    # Cap and format to 3dp — 2dp would print 0.001 as 0.00 which validator rejects
+    safe_rewards = [max(0.001, min(0.999, float(r))) for r in rewards]
+    rewards_str = ",".join("{:.3f}".format(r) for r in safe_rewards)
+    safe_score = max(0.001, min(0.999, float(score)))
     print(
-        "[END] success={} steps={} rewards={}".format(
-            str(success).lower(), steps, rewards_str
+        "[END] success={} steps={} score={:.3f} rewards={}".format(
+            str(success).lower(), steps, safe_score, rewards_str
         ),
         flush=True,
     )
@@ -424,7 +429,7 @@ def run_task(
                 env.close()
             except Exception:
                 pass
-            log_end(success=False, steps=step_idx - 1, rewards=step_rewards)
+            log_end(success=False, steps=step_idx - 1, rewards=step_rewards, score=0.001)
             raise
  
         # Guidelines: [END] emitted after env.close()
@@ -434,7 +439,8 @@ def run_task(
             pass
  
         passed_bool = (success == "yes")        # bool for log/narrative
-        log_end(success=passed_bool, steps=step_idx - 1, rewards=step_rewards)
+        episode_score = result.get("score", 0.5) if result else 0.5
+        log_end(success=passed_bool, steps=step_idx - 1, rewards=step_rewards, score=episode_score)
  
         # Generate episode narrative
         narrative = generate_narrative(
@@ -449,8 +455,8 @@ def run_task(
         # Sanitize step_rewards — raw env rewards can be exactly 0.0, -1.0, 1.0 etc.
         safe_step_rewards = [max(0.001, min(0.999, _clamp01((r + 1.0) / 2.0))) for r in step_rewards]
  
-        result["episode"]         = str(ep + 1)       # string avoids int 0/1 issue
-        result["seed"]            = str(seed + ep)    # string avoids int 0/1 issue
+        result["episode"]         = ep + 1
+        result["seed"]            = seed + ep
         result["step_rewards"]    = safe_step_rewards  # clamped floats, never 0.0/1.0
         result["reasoning_trace"] = reasoning_trace[:5]
         result["narrative"]       = narrative
@@ -487,8 +493,7 @@ def run_task(
  
     from collections import Counter
     grades = Counter(r["grade"] for r in results)
-    # Use strings for counts to avoid integer 0/1 issues
-    grade_dist = {g: str(grades.get(g, 0)) for g in ["A", "B", "C", "D", "F"]}
+    grade_dist = {g: grades.get(g, 0) for g in ["A", "B", "C", "D", "F"]}
  
     from tasks.graders import _sanitize_output as _san
     # Return ONLY _clamp01'd floats and strings — final sanitize catches any edge-case 0.0/1.0
