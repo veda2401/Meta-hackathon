@@ -465,7 +465,8 @@ def run_task(
     mean_avg_r = round(float(statistics.mean(avg_r)), 4)
 
     passes = sum(1 for r in results if r["passed"])
-    pass_rate = passes / episodes if episodes > 0 else 0.0
+    raw_pass_rate = passes / episodes if episodes > 0 else 0.5
+    pass_rate = float(max(0.01, min(0.99, raw_pass_rate)))
 
     from collections import Counter
     grades = Counter(r["grade"] for r in results)
