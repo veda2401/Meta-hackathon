@@ -108,24 +108,24 @@ def grade_episode(env: PowerGridEnv) -> dict:
         )
 
     raw_score_01 = total_score / 100.0
-    
-    # STRICT clamp AFTER normalization
+
+    # ── BULLETPROOF clamp: clamp → round → clamp → final cast ────────────────
+    # Step 1: initial clamp to strict (0.001, 0.999)
     safe_score_01 = max(0.001, min(0.999, raw_score_01))
-    
-    # Avoid rounding to exact 0 or 1
+    # Step 2: round to 6dp (avoids floating point drift)
+    safe_score_01 = round(safe_score_01, 6)
+    # Step 3: clamp again in case round() drifted boundary
+    safe_score_01 = max(0.001, min(0.999, safe_score_01))
+    # Step 4: final 4dp round and strict boundary check
     safe_score_01 = round(safe_score_01, 4)
-    
-    # Final safety clamp again (VERY IMPORTANT)
-    if safe_score_01 <= 0.0:
-        safe_score_01 = 0.001
-    elif safe_score_01 >= 1.0:
-        safe_score_01 = 0.999
+    if safe_score_01 <= 0.0 or safe_score_01 >= 1.0:
+        safe_score_01 = max(0.001, min(0.999, safe_score_01))
 
     return {
         "difficulty":   difficulty.value,
-        "total_score":  round(total_score, 2),
-        "score_01":     safe_score_01,
-        "score":        safe_score_01,
+        "total_points": round(float(total_score), 2),
+        "score_01":     float(safe_score_01),
+        "score":        float(safe_score_01),
         "grade":        _letter(total_score),
         "passed":       passed,
         "breakdown": {
