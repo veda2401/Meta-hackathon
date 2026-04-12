@@ -232,17 +232,17 @@ curl http://localhost:7860/health
 
 ---
 
-## 📈 Baseline Scores (EconomicDispatchAgent, seed=42, 3 episodes)
+## 📈 Baseline Scores (RuleBasedAgent, seed=42, 3 episodes)
 
 | Difficulty | Score 0-1 | ± Std | Pass Rate |
 |------------|-----------|-------|-----------|
-| **EASY** | **0.5736** | 0.003 | 100% |
-| **MEDIUM** | **0.6273** | 0.122 | 100% |
-| **HARD** | **0.4676** | 0.153 | 67% |
+| **EASY** | **0.7142** | 0.038 | 100% |
+| **MEDIUM** | **0.6231** | 0.052 | 100% |
+| **HARD** | **0.4679** | 0.150 | 67% |
 
 Reproduce:
 ```bash
-python inference.py --agent economic --episodes 3 --seed 42
+python inference.py --agent rulebased --episodes 3 --seed 42
 ```
 
 Run LLM agent (requires `HF_TOKEN` environment variable):

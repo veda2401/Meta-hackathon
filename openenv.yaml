@@ -206,7 +206,7 @@ baselines:
 grading:
   module:      tasks.graders
   function:    grade_episode
-  score_range: [0, 100]
+  score_range: [0, 1]
   grades:      {A: "≥90", B: "≥75", C: "≥60", D: "≥40", F: "<40"}
   criteria:
     easy:   {min_avg_reward: -0.10, max_overload_events: 0,  max_relay_trips: 0,  max_gen_outages: 0}
