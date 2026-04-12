@@ -464,6 +464,13 @@ def run_task(
     # avg_reward summary (not a score, so no 0/1 risk, but clamp anyway)
     mean_avg_r = round(float(statistics.mean(avg_r)), 4)
 
+    passes = sum(1 for r in results if r["passed"])
+    pass_rate = passes / episodes if episodes > 0 else 0.0
+
+    from collections import Counter
+    grades = Counter(r["grade"] for r in results)
+    grade_dist = {g: grades.get(g, 0) for g in ["A", "B", "C", "D", "F"]}
+
     return {
         "difficulty": difficulty,
         "episodes":   episodes,
@@ -476,6 +483,8 @@ def run_task(
             "min":  safe_min,
             "max":  safe_max,
         },
+        "pass_rate": pass_rate,
+        "grade_distribution": grade_dist,
         "avg_reward_mean": mean_avg_r,
         "sample_reasoning": results[0].get("reasoning_trace", []) if results else [],
     }
